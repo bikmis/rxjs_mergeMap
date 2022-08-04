@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/rxjs@^7/dist/bundles/rxjs.umd.min.js"></script>
+  <title>Document</title>
+</head>
+
+<body>
+
+
+
+  <script>
+    //use of mergeMap for a dependent call
+    const { of, mergeMap, throwError } = rxjs;
+    const { ajax } = rxjs.ajax;
+    const { map, tap, filter, delay } = rxjs.operators;
+
+    const userCredentials = [
+      { id: 1, username: 'jack', password: 'password' },
+      { id: 2, username: 'bikash', password: 'mishra' },
+      { id: 3, username: 'john', password: 'password' },
+    ];
+
+    const login$ = (username, password) => {
+      for (let x = 0; x < userCredentials.length; x++) {
+        if (userCredentials[x].username == username && userCredentials[x].password == password)
+          return of({ id: userCredentials[x].id, jwt: '123', username: username }).pipe(delay(1000), map(x => { return x }));
+      }
+      return throwError('username and/or password is wrong')
+    };
+
+    const user$ = login$('bikash', 'mishra').pipe(mergeMap((x) => {
+      if (x.id) {
+        //In the real application, add the jwt in the header of the request and then make an ajax call.
+        var user$ = ajax.getJSON('https://jsonplaceholder.typicode.com/users'+'/'+x.id);
+        return user$;
+      } else {
+        return throwError("jwt not defined");
+      }
+    }));
+
+    user$.subscribe(x => { console.log(x) }, x => console.log(x), x => console.log('this always runs in subscribe finally method if there is no error.'))
+
+  </script>
+</body>
+
+</html>
